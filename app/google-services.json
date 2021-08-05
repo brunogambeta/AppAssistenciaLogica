@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "375124617677",
+    "project_id": "appassistencialogica",
+    "storage_bucket": "appassistencialogica.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:375124617677:android:1ea3843a704ff7cae83c84",
+        "android_client_info": {
+          "package_name": "com.brunocesargambeta.appassistencialogica"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "375124617677-8ml9utjsq3hv8c2n2q943qcnfpjggbp9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.brunocesargambeta.appassistencialogica",
+            "certificate_hash": "391b43cdb14d3bda04ed85ac72d510b0ff8a8ac3"
+          }
+        },
+        {
+          "client_id": "375124617677-4b8fhh6epiksl2b24ob5ml0292k7j84n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgkNZvxQJkuFAbpLFqPp7KDjhJoBHvqRg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "375124617677-4b8fhh6epiksl2b24ob5ml0292k7j84n.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

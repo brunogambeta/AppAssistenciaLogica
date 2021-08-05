@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.brunocesargambeta.appassistencialogica">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/logo"
+        android:label="@string/app_name"
+        android:roundIcon="@drawable/logo"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AppAssistenciaLogica">
+        <activity android:name=".activity.NovaMetaActivity"
+            android:parentActivityName=".activity.MainActivity"
+            android:screenOrientation="portrait">
+
+        </activity>
+        <activity android:name=".activity.FiltrarLancamentosActivity"
+            android:parentActivityName=".activity.LancamentosActivity"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name=".activity.MetasActivity"
+            android:parentActivityName=".activity.MainActivity"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name=".activity.NovoLancamentoActivity"
+            android:parentActivityName=".activity.LancamentosActivity"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name=".activity.LancamentosActivity"
+            android:parentActivityName=".activity.MainActivity"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name=".activity.TecnicosActivity"
+            android:parentActivityName=".activity.MainActivity"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name=".activity.SobreActivity"
+            android:parentActivityName=".activity.MainActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".activity.AutenticacaoActivity"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".activity.MainActivity"
+            android:screenOrientation="portrait"/>
+    </application>
+
+</manifest>
