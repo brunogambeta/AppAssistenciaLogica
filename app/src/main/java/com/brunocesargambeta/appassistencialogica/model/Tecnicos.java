@@ -10,7 +10,15 @@ public class Tecnicos {
     private Double valorLancadoDiario;
     private Double valorLancadoTotal;
     private String dataUltimoLancamento;
+    private String tipoTecnico;
 
+    public String getTipoTecnico() {
+        return tipoTecnico;
+    }
+
+    public void setTipoTecnico(String tipoTecnico) {
+        this.tipoTecnico = tipoTecnico;
+    }
 
     public Tecnicos() {
         DatabaseReference firebaseRef = ConfiguracaoFirebase.getFirebase();
@@ -19,7 +27,7 @@ public class Tecnicos {
         setIdTecnico(tecnicoRef.push().getKey());
     }
 
-    public void salvarTecnico(){
+    public void salvarTecnico() {
         DatabaseReference firebaseRef = ConfiguracaoFirebase.getFirebase();
         DatabaseReference tecnicoRef = firebaseRef.child("tecnicos").child(getIdTecnico());
         tecnicoRef.setValue(this);

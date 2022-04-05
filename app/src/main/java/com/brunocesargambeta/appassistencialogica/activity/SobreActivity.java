@@ -13,7 +13,7 @@ import com.brunocesargambeta.appassistencialogica.R;
 
 public class SobreActivity extends AppCompatActivity {
 
-    private TextView textVersao;
+    private TextView textVersao, textViewContato;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,8 +28,13 @@ public class SobreActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         textVersao = findViewById(R.id.textViewVersao);
+        textViewContato = findViewById(R.id.textViewContato);
+
         String versionName = BuildConfig.VERSION_NAME;
         textVersao.setText("Versão do app: "+versionName);
+
+        String contato = "Telefone: (47) 3351-5497";
+        textViewContato.setText(contato);
 
     }
 }

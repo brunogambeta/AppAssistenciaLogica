@@ -12,7 +12,9 @@ import com.brunocesargambeta.appassistencialogica.R;
 import com.brunocesargambeta.appassistencialogica.model.Lancamentos;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.List;
+import java.util.Locale;
 
 public class AdapterLancamentos extends RecyclerView.Adapter<AdapterLancamentos.MyViewHolder> {
 
@@ -33,7 +35,8 @@ public class AdapterLancamentos extends RecyclerView.Adapter<AdapterLancamentos.
         Lancamentos lancamentos = listaLancamentos.get(position);
         holder.descricao.setText(lancamentos.getDescricaoOS());
         holder.numeroOS.setText(lancamentos.getNumeroOS());
-        DecimalFormat decimalFormat = new DecimalFormat("0.00");
+        DecimalFormatSymbols dfs = new DecimalFormatSymbols (new Locale("pt", "BR"));
+        DecimalFormat decimalFormat = new DecimalFormat ("#,##0.00", dfs);
         String resultadoFormatado = decimalFormat.format( lancamentos.getValorOS() );
         holder.valorOS.setText("R$ " +resultadoFormatado);
     }

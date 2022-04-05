@@ -1,8 +1,18 @@
 package com.brunocesargambeta.appassistencialogica.config;
 
+import android.util.Log;
+
+import androidx.annotation.NonNull;
+
+import com.brunocesargambeta.appassistencialogica.model.Tecnicos;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 /**
  * Created by Bruno Gambeta
@@ -10,38 +20,35 @@ import com.google.firebase.auth.UserProfileChangeRequest;
 
 public class UsuarioFirebase {
 
-    public static String getIdUsuario(){
 
+    public static String getIdUsuario() {
         FirebaseAuth autenticacao = ConfiguracaoFirebase.getFirebaseAutenticacao();
         return autenticacao.getCurrentUser().getUid();
 
     }
 
-    public static String getNomeUsuario(){
-        FirebaseAuth auth = ConfiguracaoFirebase.getFirebaseAutenticacao();
-        return auth.getCurrentUser().getDisplayName();
+    public static String getTipoUsuarioLogado() {
+        final String[] tipoTecnico = {"A"};
+        DatabaseReference firebaseRef = ConfiguracaoFirebase.getFirebase();
+        DatabaseReference usuarioRef = firebaseRef.child("tecnicos").child(UsuarioFirebase.getIdUsuario());
+        usuarioRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Tecnicos tec = snapshot.getValue(Tecnicos.class);
+                assert tec != null;
+                tipoTecnico[0] = tec.getTipoTecnico();
+            }
+
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+
+
+        return tipoTecnico[0];
+
+
     }
-
-    public static FirebaseUser getUsuarioAtual(){
-        FirebaseAuth usuario = ConfiguracaoFirebase.getFirebaseAutenticacao();
-        return usuario.getCurrentUser();
-    }
-
-    public static boolean atualizarTipoUsuario(String tipo){
-
-        try {
-
-            FirebaseUser user = getUsuarioAtual();
-            UserProfileChangeRequest profile = new UserProfileChangeRequest.Builder()
-                    .setDisplayName(tipo)
-                    .build();
-            user.updateProfile(profile);
-            return true;
-
-        }catch (Exception e){
-            e.printStackTrace();
-            return false;
-        }
-    }
-
 }

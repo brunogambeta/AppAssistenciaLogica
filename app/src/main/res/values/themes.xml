@@ -28,4 +28,10 @@
     <style name="Theme.AppAssistenciaLogica.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="Theme.AppAssistenciaLogica.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="spinnerTecnicos">
+        <item name="colorOnBackground">@color/corFundo</item>
+        <item name="spinnerStyle">@color/corFundo</item>
+
+    </style>
 </resources>

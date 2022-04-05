@@ -4,13 +4,14 @@ package com.brunocesargambeta.appassistencialogica.activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.TextView;
-
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -31,11 +32,14 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -46,12 +50,15 @@ public class MainActivity extends AppCompatActivity {
     private AdapterListaTecnicos adapterListaTecnicos;
     private DatabaseReference firebaseRef;
     private TextView nomeTecnicoLogado, textMetaDiaria;
+    private String tipoTecnicoLogado = "";
     private TextView textValorMetaGeral;
-    private TextView textValorMetaAtingida,textDataAtual, textValorAtingido;
+    private TextView textValorMetaAtingida, textDataAtual, textValorAtingido;
     private List<Tecnicos> listaTecnicos = new ArrayList<>();
     private List<Tecnicos> listaTecnicos2 = new ArrayList<>();
-    private DecimalFormat decimalFormat = new DecimalFormat("0.00");
+    private DecimalFormat decimalFormat = new DecimalFormat("#,##");
     private List<Metas> listaMetas = new ArrayList<>();
+    private DecimalFormatSymbols dfs = new DecimalFormatSymbols(new Locale("pt", "BR"));
+    DecimalFormat df = new DecimalFormat("#,##0.00", dfs);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,7 +100,9 @@ public class MainActivity extends AppCompatActivity {
                 Intent i = new Intent(MainActivity.this, LancamentosActivity.class);
                 i.putExtra("NomeTecnico", listadeTecnicos.getNomeTecnico());
                 i.putExtra("IDTecnico", listadeTecnicos.getIdTecnico());
+                i.putExtra("TipoTecnico", listadeTecnicos.getTipoTecnico());
                 i.putExtra("valorDiario", listadeTecnicos.getValorLancadoDiario());
+                Log.i("idTecnico", listadeTecnicos.getTipoTecnico());
                 startActivity(i);
             }
 
@@ -120,33 +129,35 @@ public class MainActivity extends AppCompatActivity {
         textDataAtual = findViewById(R.id.textDataAtual);
         textMetaDiaria = findViewById(R.id.textValorMetaDiaria);
         textValorAtingido = findViewById(R.id.textValorAtingido);
-
-
         nomeTecnicoLogado.setText("Téc. Logado: Não Localizado");
     }
 
     //Metodo para fazer a consulta de tecnicos no Firebase
     private void recuperarListaTecnicos() {
-        DatabaseReference listaTecnicosRef = firebaseRef.child("tecnicos");
-        listaTecnicosRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                listaTecnicos.clear();
-                listaTecnicos2.clear();
-                for (DataSnapshot tecnicos : snapshot.getChildren()) {
-                    listaTecnicos.add(tecnicos.getValue(Tecnicos.class));
-                    listaTecnicos2.add(tecnicos.getValue(Tecnicos.class));
+        try {
+            Query listaTecnicosRef = firebaseRef.child("tecnicos").orderByChild("nomeTecnico");
+            listaTecnicosRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    listaTecnicos.clear();
+                    listaTecnicos2.clear();
+                    for (DataSnapshot tecnicos : snapshot.getChildren()) {
+                        listaTecnicos.add(tecnicos.getValue(Tecnicos.class));
+                        listaTecnicos2.add(tecnicos.getValue(Tecnicos.class));
+
+                    }
+                    adapterTecnicos.notifyDataSetChanged();
+                    adapterListaTecnicos.notifyDataSetChanged();
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
 
                 }
-                adapterTecnicos.notifyDataSetChanged();
-                adapterListaTecnicos.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
+            });
+        } catch (Exception e) {
+            Toast.makeText(getApplicationContext(), "Não foi possível carregar a lista de tecnicos, verifique!", Toast.LENGTH_LONG).show();
+        }
 
     }
 
@@ -164,10 +175,18 @@ public class MainActivity extends AppCompatActivity {
                 deslogarUsuario();
                 break;
             case R.id.menu_metas:
-                abrirtelaMetas();
+                if (tipoTecnicoLogado.equals("A")) {
+                    abrirtelaMetas();
+                } else {
+                    ConfiguracaoApp.exibirMensagem(getApplicationContext(), "Função não liberada para esse tipo de usuário");
+                }
                 break;
             case R.id.menu_tecnicos:
-                abrirTelaTecnicos();
+                if (tipoTecnicoLogado.equals("A") || tipoTecnicoLogado.equals("")) {
+                    abrirTelaTecnicos();
+                } else {
+                    ConfiguracaoApp.exibirMensagem(getApplicationContext(), "Função não liberada para esse tipo de usuário");
+                }
                 break;
             case R.id.sobre_app:
                 abrirTelaSobre();
@@ -205,65 +224,84 @@ public class MainActivity extends AppCompatActivity {
         startActivity(metas);
     }
 
-    private void dataAtual(){
+    private void dataAtual() {
         textDataAtual.setText(ConfiguracaoApp.getDateTime());
     }
 
-    private void buscarMetaGeral(){
-        DatabaseReference metasRef = firebaseRef.child("metas");
-        metasRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                listaMetas.clear();
-                for (DataSnapshot ds : snapshot.getChildren()){
-                    listaMetas.add(ds.getValue(Metas.class));
-                    Metas metas = ds.getValue(Metas.class);
-                    if ( metas.getValorMensal() == null){
-                        textValorMetaGeral.setText("Valor Meta Geral: R$ 0,00");
-                        textValorMetaAtingida.setText("Valor Meta Atingida: ");
-                        textMetaDiaria.setText("Valor Meta Diária: R$ 0,00");
-                    }else{
-                        String resultadoFormatado = decimalFormat.format( metas.getValorMensal());
-                        textValorMetaGeral.setText("Valor Meta Geral: R$ "+ resultadoFormatado);
+    private void buscarMetaGeral() {
+        try {
+            DatabaseReference metasRef = firebaseRef.child("metas").child(ConfiguracaoApp.getMesAno());
+            metasRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    listaMetas.clear();
+                    try {
+                        listaMetas.add(snapshot.getValue(Metas.class));
+                        Metas metas = snapshot.getValue(Metas.class);
+                        if (metas.getValorMensal() == null) {
+                            textValorMetaGeral.setText("Valor Meta Geral: R$ 0,00");
+                            textValorMetaAtingida.setText("Valor Meta Atingida: ");
+                            textMetaDiaria.setText("Valor Meta Diária: R$ 0,00");
+                        } else {
+                            String resultadoFormatado = df.format(metas.getValorMensal());
+                            textValorMetaGeral.setText("Valor Meta Geral: R$ " + resultadoFormatado);
 
-                        String resultadoAtingidoFormatado = decimalFormat.format( metas.getValorDiario());
-                        if (metas.getValorDiario() >= metas.getValorDiarioPorTecnico()){
-                           textValorAtingido.setText("R$ "+resultadoAtingidoFormatado);
-                           textValorAtingido.setTextColor(Color.rgb(0,0,255));
-                        }else{
-                            textValorMetaAtingida.setText("Valor Meta Atingida:");
-                            textValorAtingido.setText("R$ " +resultadoAtingidoFormatado);
+                            String resultadoAtingidoFormatado = df.format(metas.getValorDiario());
+                            if (metas.getValorDiario() >= metas.getValorMensal()) {
+                                textValorAtingido.setText("R$ " + resultadoAtingidoFormatado);
+                                textValorAtingido.setTextColor(Color.rgb(0, 0, 255));
+                            } else {
+                                textValorMetaAtingida.setText("Valor Meta Atingida:");
+                                textValorAtingido.setText("R$ " + resultadoAtingidoFormatado);
+                                textValorAtingido.setTextColor(Color.rgb(255, 0, 0));
+                            }
+
+                            String resultadoMetaDiaria = df.format(metas.getValorDiarioPorTecnico());
+                            textMetaDiaria.setText("Valor Meta Diária: R$ " + resultadoMetaDiaria);
                         }
-
-                        String resultadoMetaDiaria = decimalFormat.format(metas.getValorDiarioPorTecnico());
-                        textMetaDiaria.setText("Valor Meta Diária: R$ "+resultadoMetaDiaria);
+                    } catch (Exception e) {
+                        ConfiguracaoApp.exibirMensagem(getApplicationContext(), "Não foi possivel carregar o valor de meta, Verifique!");
                     }
+
                 }
-            }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
 
-            }
-        });
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+        } catch (Exception e) {
+            Toast.makeText(getApplicationContext(), "Não foi possível carregar as metas, verifique!", Toast.LENGTH_LONG).show();
+
+        }
     }
 
-    private void buscarNomeTecnicoLogado(){
-      DatabaseReference tecnicosRef = firebaseRef.child("tecnicos").child(UsuarioFirebase.getIdUsuario());
-      tecnicosRef.addValueEventListener(new ValueEventListener() {
-          @Override
-          public void onDataChange(@NonNull DataSnapshot snapshot) {
-              for (DataSnapshot ds : snapshot.getChildren()){
-                  Tecnicos tecnicos = snapshot.getValue(Tecnicos.class);
-                  nomeTecnicoLogado.setText("Téc. Logado: "+tecnicos.getNomeTecnico());
-              }
-          }
 
-          @Override
-          public void onCancelled(@NonNull DatabaseError error) {
+    private void buscarNomeTecnicoLogado() {
+        try {
 
-          }
-      });
+            DatabaseReference tecnicosRef = firebaseRef.child("tecnicos").child(UsuarioFirebase.getIdUsuario());
+            tecnicosRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    for (DataSnapshot ds : snapshot.getChildren()) {
+                        Tecnicos tecnicos = snapshot.getValue(Tecnicos.class);
+                        nomeTecnicoLogado.setText("Téc. Logado: " + tecnicos.getNomeTecnico());
+                        tipoTecnicoLogado = tecnicos.getTipoTecnico();
+
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+        } catch (Exception e) {
+            Toast.makeText(getApplicationContext(), "Não foi possível carregar as metas dos tecnicos, verifique!", Toast.LENGTH_LONG).show();
+        }
+
     }
 
     @Override
@@ -279,4 +317,6 @@ public class MainActivity extends AppCompatActivity {
         adapterTecnicos.notifyDataSetChanged();
         adapterListaTecnicos.notifyDataSetChanged();
     }
+
+
 }

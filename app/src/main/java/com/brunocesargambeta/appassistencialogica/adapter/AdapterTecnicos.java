@@ -1,6 +1,7 @@
 package com.brunocesargambeta.appassistencialogica.adapter;
 
 import android.graphics.Color;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,12 +21,15 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.List;
+import java.util.Locale;
 
 public class AdapterTecnicos extends RecyclerView.Adapter<AdapterTecnicos.MyViewHolder> {
 
     private final List<Tecnicos> listaTecnicos;
-    DecimalFormat decimalFormat = new DecimalFormat("0.00");
+    DecimalFormatSymbols dfs = new DecimalFormatSymbols (new Locale("pt", "BR"));
+    DecimalFormat decimalFormat = new DecimalFormat ("#,##0.00", dfs);
     private final List<Metas> listaMetas;
 
     public AdapterTecnicos(List<Tecnicos> tecnicos, List<Metas> listaMetas) {
@@ -42,6 +46,9 @@ public class AdapterTecnicos extends RecyclerView.Adapter<AdapterTecnicos.MyView
 
     @Override
     public void onBindViewHolder(@NonNull AdapterTecnicos.MyViewHolder holder, int position) {
+        try{
+
+
         Tecnicos tecnico = listaTecnicos.get(position);
         Metas metas = listaMetas.get(listaMetas.size() -1);
         String resultadoFormatado = decimalFormat.format(tecnico.getValorLancadoDiario());
@@ -64,6 +71,9 @@ public class AdapterTecnicos extends RecyclerView.Adapter<AdapterTecnicos.MyView
             holder.valorMeta.setTextColor(Color.rgb(255, 0, 0));
         }
 
+        }catch (Exception e){
+            Log.e("erroAdapterTecnicos", "Não foi possivel carregar os dados dos tecnicos - AdapterTecnicos.");
+        }
 
     }
 

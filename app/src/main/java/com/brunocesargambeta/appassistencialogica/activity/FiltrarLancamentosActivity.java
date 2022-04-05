@@ -22,7 +22,7 @@ public class FiltrarLancamentosActivity extends AppCompatActivity {
     private TextView textData;
     private Button  buttonFiltrar;
     private String dataEscolhida;
-    private String idTecnicoSelecionado;
+    private String idTecnicoSelecionado, tipoTecnicoFiltro, nomeTecnico;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +39,9 @@ public class FiltrarLancamentosActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         idTecnicoSelecionado = (String) getIntent().getSerializableExtra("idTecnico");
+        tipoTecnicoFiltro = (String) getIntent().getSerializableExtra("TipoTecnico");
+        nomeTecnico = (String) getIntent().getSerializableExtra("NomeTecnico");
+
 
         calendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
             @Override
@@ -99,6 +102,8 @@ public class FiltrarLancamentosActivity extends AppCompatActivity {
                 Intent i = new Intent(FiltrarLancamentosActivity.this, LancamentosActivity.class);
                 i.putExtra("dataSelecionada", dataEscolhida);
                 i.putExtra("IDTecnico", idTecnicoSelecionado);
+                i.putExtra("tipoTecnicoLogado", tipoTecnicoFiltro);
+                i.putExtra("NomeTecnico", nomeTecnico);
                 startActivity(i);
                 finish();
             }

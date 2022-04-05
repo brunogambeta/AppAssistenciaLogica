@@ -22,16 +22,19 @@ public class Lancamentos {
         DatabaseReference lancamentoRef = firebaseRef
                 .child("lancamentos");
         setIdLancamento(lancamentoRef.push().getKey());
-        setIdUsuarioLancamento(UsuarioFirebase.getIdUsuario());
     }
 
     public void salvar(){
         DatabaseReference firebaseRef = ConfiguracaoFirebase.getFirebase();
         DatabaseReference lancamentoRef = firebaseRef.child("lancamentos")
-                .child(UsuarioFirebase.getIdUsuario())
-                .child(getDataLancamento().toString())
+                .child(getIdUsuarioLancamento())
+                .child(getDataLancamento())
                 .child(getIdLancamento());
         lancamentoRef.setValue(this);
+
+
+        DatabaseReference osRef = firebaseRef.child("ordemServico").child(getNumeroOS()).child("numeroOS");
+        osRef.setValue(getNumeroOS());
     }
 
     public String getDataLancamento() {

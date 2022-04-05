@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">AppAssistenciaLogica</string>
+    <string name="app_name">Metas Assistencia Logica</string>
     <string name="title_activity_lancamentos">LancamentosActivity</string>
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">First Fragment</string>
@@ -7,7 +7,9 @@
     <string name="next">Next</string>
     <string name="previous">Previous</string>
 
-    <string name="hello_first_fragment">Hello first fragment</string>
-    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
-    <string name="title_activity_lancamento">LancamentoActivity</string>
+    <string-array name="tipoTecnico">
+        <item name="tipo1">Administrador</item>
+        <item name="tipo2">Técnico</item>
+        <item name="tipo3">Outros</item>
+    </string-array>
 </resources>

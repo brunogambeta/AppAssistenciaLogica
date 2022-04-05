@@ -1,5 +1,13 @@
 package com.brunocesargambeta.appassistencialogica.activity;
 
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.EditText;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -7,14 +15,6 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.graphics.Color;
-import android.os.Bundle;
-import android.view.View;
-import android.widget.EditText;
-import android.widget.Toast;
 
 import com.brunocesargambeta.appassistencialogica.R;
 import com.brunocesargambeta.appassistencialogica.adapter.AdapterMetas;
@@ -84,95 +84,100 @@ public class MetasActivity extends AppCompatActivity {
     }
 
     private void recuperarMetas() {
-        metasRef = firebaseRef.child("metas");
-        metasRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                listaMetas.clear();
-                for (DataSnapshot ds : snapshot.getChildren()) {
-                    listaMetas.add(ds.getValue(Metas.class));
-                }
-                adapterMetas.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-    }
-
-    private void excluirLancamento(RecyclerView.ViewHolder viewHolder) {
-        int position = viewHolder.getAdapterPosition();
-        metas = listaMetas.get(position);
-        metasRef = firebaseRef.child("metas");
-        metasRef.child(metas.getVigenciaMeta()).removeValue();
-        adapterMetas.notifyItemRemoved(position);
-        adapterMetas.notifyDataSetChanged();
-        ConfiguracaoApp.exibirMensagem(getApplicationContext(), "Lançamento excluido com sucesso!");
-    }
-
-
-    private void swipe() {
-
-        ItemTouchHelper.Callback itemTouch = new ItemTouchHelper.Callback() {
-            @Override
-            public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-                int dragFlags = ItemTouchHelper.ACTION_STATE_IDLE;
-                int swipeFlags = ItemTouchHelper.START | ItemTouchHelper.END;
-                return makeMovementFlags(dragFlags, swipeFlags);
-            }
-
-            @Override
-            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-                return false;
-            }
-
-            @Override
-            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-                validaExclusaoMetas(viewHolder);
-            }
-        };
-        new ItemTouchHelper(itemTouch).attachToRecyclerView(recyclerView);
-    }
-
-    private void validaExclusaoMetas(RecyclerView.ViewHolder viewHolder) {
-
-        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
-
-        //Configura AlertDialog
-        alertDialog.setTitle("Exclusão de Metas");
-        alertDialog.setMessage("Informe a senha para excluir a meta");
-        alertDialog.setCancelable(false);
-
-        View viewEditText = getLayoutInflater().inflate(R.layout.dialog_campo_senha, null);
-        final EditText editSenha = viewEditText.findViewById(R.id.editTextSenha);
-        alertDialog.setView(viewEditText);
-
-        alertDialog.setPositiveButton("Confirmar", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String senhaConfirmacao = "automa";
-                if (editSenha.getText().toString().equals(senhaConfirmacao)) {
-                    excluirLancamento(viewHolder);
-                    ConfiguracaoApp.exibirMensagem(getApplicationContext(), "Metas excluîda com sucesso!!");
-                    finish();
-                    adapterMetas.notifyDataSetChanged();
-                } else {
-                    ConfiguracaoApp.exibirMensagem(getApplicationContext(), "Senha inválida!!");
+        try {
+            metasRef = firebaseRef.child("metas");
+            metasRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    listaMetas.clear();
+                    for (DataSnapshot ds : snapshot.getChildren()) {
+                        listaMetas.add(ds.getValue(Metas.class));
+                    }
                     adapterMetas.notifyDataSetChanged();
                 }
-            }
-        });
 
-        alertDialog.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                ConfiguracaoApp.exibirMensagem(getApplicationContext(), "Procedimento cancelado!!");
-            }
-        });
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
 
-        AlertDialog alert = alertDialog.create();
-        alert.show();
+                }
+            });
+        }catch (Exception e){
+            Log.e("erroRecuperarMetas", "Não foi possivel carregar as metas");
+        }
+
+        }
+
+        private void excluirLancamento (RecyclerView.ViewHolder viewHolder){
+            int position = viewHolder.getAdapterPosition();
+            metas = listaMetas.get(position);
+            metasRef = firebaseRef.child("metas");
+            metasRef.child(metas.getVigenciaMeta()).removeValue();
+            adapterMetas.notifyItemRemoved(position);
+            adapterMetas.notifyDataSetChanged();
+            ConfiguracaoApp.exibirMensagem(getApplicationContext(), "Lançamento excluido com sucesso!");
+        }
+
+
+        private void swipe () {
+
+            ItemTouchHelper.Callback itemTouch = new ItemTouchHelper.Callback() {
+                @Override
+                public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                    int dragFlags = ItemTouchHelper.ACTION_STATE_IDLE;
+                    int swipeFlags = ItemTouchHelper.START | ItemTouchHelper.END;
+                    return makeMovementFlags(dragFlags, swipeFlags);
+                }
+
+                @Override
+                public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                    return false;
+                }
+
+                @Override
+                public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                    validaExclusaoMetas(viewHolder);
+                }
+            };
+            new ItemTouchHelper(itemTouch).attachToRecyclerView(recyclerView);
+        }
+
+        private void validaExclusaoMetas (RecyclerView.ViewHolder viewHolder){
+
+            AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+
+            //Configura AlertDialog
+            alertDialog.setTitle("Exclusão de Metas");
+            alertDialog.setMessage("Informe a senha para excluir a meta");
+            alertDialog.setCancelable(false);
+
+            View viewEditText = getLayoutInflater().inflate(R.layout.dialog_campo_senha, null);
+            final EditText editSenha = viewEditText.findViewById(R.id.editTextSenha);
+            alertDialog.setView(viewEditText);
+
+            alertDialog.setPositiveButton("Confirmar", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    String senhaConfirmacao = "automa";
+                    if (editSenha.getText().toString().equals(senhaConfirmacao)) {
+                        excluirLancamento(viewHolder);
+                        ConfiguracaoApp.exibirMensagem(getApplicationContext(), "Metas excluîda com sucesso!!");
+                        finish();
+                        adapterMetas.notifyDataSetChanged();
+                    } else {
+                        ConfiguracaoApp.exibirMensagem(getApplicationContext(), "Senha inválida!!");
+                        adapterMetas.notifyDataSetChanged();
+                    }
+                }
+            });
+
+            alertDialog.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    ConfiguracaoApp.exibirMensagem(getApplicationContext(), "Procedimento cancelado!!");
+                }
+            });
+
+            AlertDialog alert = alertDialog.create();
+            alert.show();
+        }
     }
-}

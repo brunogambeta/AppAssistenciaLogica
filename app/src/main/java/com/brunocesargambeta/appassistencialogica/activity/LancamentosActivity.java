@@ -1,13 +1,5 @@
 package com.brunocesargambeta.appassistencialogica.activity;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.recyclerview.widget.ItemTouchHelper;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
@@ -17,8 +9,14 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.EditText;
-import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.brunocesargambeta.appassistencialogica.R;
 import com.brunocesargambeta.appassistencialogica.adapter.AdapterLancamentos;
@@ -42,17 +40,18 @@ public class LancamentosActivity extends AppCompatActivity {
     private FloatingActionButton fab;
     private RecyclerView recyclerLancamentos;
     private AdapterLancamentos adapterLancamentos;
-    private TextView textDataFiltro;
+    private String textDataFiltro;
+    private String tipoTecnico;
+    private String tipoTecnicoLogado = "X";
     private String idTecnicoSelecionado;
     private DatabaseReference firebaseRef;
-    private DatabaseReference lancamentoRef;
+    private DatabaseReference lancamentoRef, osRef;
     private List<Lancamentos> listaLancamentos = new ArrayList<>();
     private Lancamentos lancamento;
     private Double valorLancamento;
     private Double valorSaldoTecnico, valorLancadoTotal;
     private String diaAtual;
-    private String dataFiltro;
-
+    private String dataFiltro, nomeTecnico;
     private Double valorSaldoMetas;
 
     @Override
@@ -67,15 +66,9 @@ public class LancamentosActivity extends AppCompatActivity {
         //Buscar saldo diario tecnico
         buscarSaldoDiarioTecnico();
         buscarSaldoDiarioMetas();
+        buscarDadosTecnicoLogado();
+        configuraToolbar(textDataFiltro, nomeTecnico);
 
-        //Toolbar
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setTitle("Lançamentos");
-        toolbar.setTitleTextColor(Color.WHITE);
-        setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
-        idTecnicoSelecionado = (String) getIntent().getSerializableExtra("IDTecnico");
 
         //Configuracao RecyclerView
         recyclerLancamentos.setLayoutManager(new LinearLayoutManager(this));
@@ -89,50 +82,51 @@ public class LancamentosActivity extends AppCompatActivity {
         //Recuperar filtro de lancamento
         recuperarTelaFiltros();
 
-        if (UsuarioFirebase.getIdUsuario().equals(idTecnicoSelecionado)) {
-            fab.setVisibility(View.VISIBLE);
-            swipe();
-        } else {
-            fab.setVisibility(View.INVISIBLE);
-        }
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(LancamentosActivity.this, NovoLancamentoActivity.class);
+                i.putExtra("IDTecnico", idTecnicoSelecionado);
+                i.putExtra("TipoTecnico", tipoTecnico);
+                i.putExtra("NomeTecnico", nomeTecnico);
+                i.putExtra("dataLancamento", dataFiltro);
                 startActivity(i);
             }
         });
     }
 
     private void inicializarComponentes() {
-
         fab = findViewById(R.id.floatingActionButton);
         recyclerLancamentos = findViewById(R.id.recyclerLancamentos);
         diaAtual = ConfiguracaoApp.getDateTime();
-        textDataFiltro = findViewById(R.id.textDataFiltro);
-        textDataFiltro.setText(ConfiguracaoApp.getDateTime());
+        textDataFiltro = ConfiguracaoApp.getDateTime();
+        idTecnicoSelecionado = (String) getIntent().getSerializableExtra("IDTecnico");
+        tipoTecnico = (String) getIntent().getSerializableExtra("TipoTecnico");
+        nomeTecnico = (String) getIntent().getSerializableExtra("NomeTecnico");
     }
 
     private void recuperarLancamentos(String data, String id) {
+        try {
+            DatabaseReference lancamentosRef = firebaseRef.child("lancamentos").child(id).child(data);
+            lancamentosRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    listaLancamentos.clear();
+                    for (DataSnapshot ds : snapshot.getChildren()) {
+                        listaLancamentos.add(ds.getValue(Lancamentos.class));
+                    }
+                    adapterLancamentos.notifyDataSetChanged();
 
-        DatabaseReference lancamentosRef = firebaseRef.child("lancamentos").child(id).child(data);
-        lancamentosRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                listaLancamentos.clear();
-                for (DataSnapshot ds : snapshot.getChildren()) {
-                    listaLancamentos.add(ds.getValue(Lancamentos.class));
-                    Log.i("Retorno", listaLancamentos.toString());
                 }
-                adapterLancamentos.notifyDataSetChanged();
 
-            }
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
+                }
+            });
+        } catch (Exception e) {
+            Log.e("errocarregarLancamentos", "Não foi possivel carregar os lançamentos");
+        }
     }
 
     private void excluirLancamento(RecyclerView.ViewHolder viewHolder) {
@@ -149,11 +143,13 @@ public class LancamentosActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int which) {
                 int position = viewHolder.getAdapterPosition();
                 lancamento = listaLancamentos.get(position);
-                lancamentoRef = firebaseRef.child("lancamentos").child(UsuarioFirebase.getIdUsuario()).child(diaAtual);
+                lancamentoRef = firebaseRef.child("lancamentos").child(idTecnicoSelecionado).child(dataFiltro);
                 lancamentoRef.child(lancamento.getIdLancamento()).removeValue();
-                adapterLancamentos.notifyItemRemoved(position);
+                osRef = firebaseRef.child("ordemServico");
+                osRef.child(lancamento.getNumeroOS()).removeValue();
                 atualizarValorDiario(lancamento.getValorOS());
                 atualizarValorDiarioMeta(lancamento.getValorOS());
+                adapterLancamentos.notifyItemRemoved(position);
                 ConfiguracaoApp.exibirMensagem(getApplicationContext(), "Lançamento excluido com sucesso!");
                 adapterLancamentos.notifyDataSetChanged();
             }
@@ -170,6 +166,7 @@ public class LancamentosActivity extends AppCompatActivity {
         AlertDialog alert = alertDialog.create();
         alert.show();
     }
+
 
     private void swipe() {
 
@@ -195,18 +192,22 @@ public class LancamentosActivity extends AppCompatActivity {
     }
 
     private void atualizarValorDiario(Double valor) {
-        DatabaseReference tecnicoRef = firebaseRef.child("tecnicos").child(UsuarioFirebase.getIdUsuario());
-        valorLancamento = valorSaldoTecnico - valor;
-        if (valorLancamento <= 0) {
-            valorLancamento = 0.0;
+        try {
+            DatabaseReference tecnicoRef = firebaseRef.child("tecnicos").child(idTecnicoSelecionado);
+            valorLancamento = valorSaldoTecnico - valor;
+            if (valorLancamento <= 0) {
+                valorLancamento = 0.0;
+            }
+            Double valornovo = valorLancadoTotal - valor;
+            if (valornovo <= 0) {
+                valornovo = 0.00;
+            }
+            tecnicoRef.child("valorLancadoDiario").setValue(valorLancamento);
+            tecnicoRef.child("valorLancadoTotal").setValue(valornovo);
+            adapterLancamentos.notifyDataSetChanged();
+        } catch (Exception e) {
+            Log.e("erroCarregarValorDiario", "Não foi possivel carregar os valores diarios do tecnicos");
         }
-        Double valornovo = valorLancadoTotal - valor;
-        if (valornovo <= 0){
-            valornovo = 0.00;
-        }
-        tecnicoRef.child("valorLancadoDiario").setValue(valorLancamento);
-        tecnicoRef.child("valorLancadoTotal").setValue(valornovo);
-        adapterLancamentos.notifyDataSetChanged();
     }
 
     @Override
@@ -231,71 +232,136 @@ public class LancamentosActivity extends AppCompatActivity {
     private void filtrarLancamentos() {
         Intent i = new Intent(LancamentosActivity.this, FiltrarLancamentosActivity.class);
         i.putExtra("idTecnico", idTecnicoSelecionado);
+        i.putExtra("TipoTecnico", tipoTecnico);
+        i.putExtra("NomeTecnico", nomeTecnico);
         startActivity(i);
     }
 
     private void buscarSaldoDiarioTecnico() {
-        DatabaseReference tecRef = firebaseRef.child("tecnicos").child(UsuarioFirebase.getIdUsuario());
-        tecRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Tecnicos tec = snapshot.getValue(Tecnicos.class);
-                Log.i("snap", "teste" + tec.getValorLancadoDiario());
-                valorSaldoTecnico = tec.getValorLancadoDiario();
-                valorLancadoTotal = tec.getValorLancadoTotal();
-            }
+        try {
+            DatabaseReference tecRef = firebaseRef.child("tecnicos").child(idTecnicoSelecionado);
+            tecRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    Tecnicos tec = snapshot.getValue(Tecnicos.class);
+                    valorSaldoTecnico = tec.getValorLancadoDiario();
+                    valorLancadoTotal = tec.getValorLancadoTotal();
+                }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
 
-            }
-        });
+                }
+            });
+        } catch (Exception e) {
+            Log.e("erroCarregarValorDiario", "Não foi possivel carregar os valores diarios do tecnicos");
+        }
     }
 
     private void atualizarValorDiarioMeta(Double valor) {
-        DatabaseReference metasRef = firebaseRef.child("metas").child(ConfiguracaoApp.getMesAno());
-        Double valorAtualizado = valorSaldoMetas - valor;
-        if (valorAtualizado < 0) {
-            valorAtualizado = 0.0;
+        try {
+            DatabaseReference metasRef = firebaseRef.child("metas").child(ConfiguracaoApp.getMesAno());
+            Double valorAtualizado = valorSaldoMetas - valor;
+            if (valorAtualizado < 0) {
+                valorAtualizado = 0.0;
+            }
+            metasRef.child("valorDiario").setValue(valorAtualizado);
+            adapterLancamentos.notifyDataSetChanged();
+        } catch (Exception e) {
+            Log.e("erroCarregarValorDiario", "Não foi possivel carregar os valores diarios do tecnicos");
         }
-        metasRef.child("valorDiario").setValue(valorAtualizado);
-        adapterLancamentos.notifyDataSetChanged();
     }
 
     private void buscarSaldoDiarioMetas() {
-        DatabaseReference metasRef = firebaseRef.child("metas");
-        metasRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                for (DataSnapshot ds : snapshot.getChildren()) {
-                    Metas metas = ds.getValue(Metas.class);
-                    assert metas != null;
-                    valorSaldoMetas = metas.getValorDiario();
+        try {
+
+            DatabaseReference metasRef = firebaseRef.child("metas");
+            metasRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    for (DataSnapshot ds : snapshot.getChildren()) {
+                        Metas metas = ds.getValue(Metas.class);
+                        assert metas != null;
+                        valorSaldoMetas = metas.getValorDiario();
+                    }
+
+
                 }
 
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
 
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
+                }
+            });
+        } catch (Exception e) {
+            Log.e("erroCarregarValorDiario", "Não foi possivel carregar os valores de meta");
+        }
     }
 
     private void recuperarTelaFiltros() {
         dataFiltro = (String) getIntent().getSerializableExtra("dataSelecionada");
         idTecnicoSelecionado = (String) getIntent().getSerializableExtra("IDTecnico");
+        tipoTecnico = (String) getIntent().getSerializableExtra("TipoTecnico");
+        nomeTecnico = (String) getIntent().getSerializableExtra("NomeTecnico");
+
         if (dataFiltro == null || dataFiltro.isEmpty()) {
             dataFiltro = ConfiguracaoApp.getDateTime();
-            textDataFiltro.setText(dataFiltro);
+            configuraToolbar(dataFiltro, nomeTecnico);
         }
         if (dataFiltro.equals(ConfiguracaoApp.getDateTime())) {
-            recuperarLancamentos(dataFiltro, idTecnicoSelecionado);
-            textDataFiltro.setText(dataFiltro);
+            configuraToolbar(dataFiltro, nomeTecnico);
         } else {
             recuperarLancamentos(dataFiltro, idTecnicoSelecionado);
-            textDataFiltro.setText(dataFiltro);
+            configuraToolbar(dataFiltro, nomeTecnico);
+        }
+    }
+
+    private void configuraToolbar(String data, String nome) {
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitle("Lançamentos");
+        toolbar.setTitleTextColor(Color.WHITE);
+        toolbar.setSubtitle(data + " - Tec: " + nome);
+        toolbar.setSubtitleTextColor(Color.WHITE);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    }
+
+    private void buscarDadosTecnicoLogado() {
+        try {
+            DatabaseReference tecnicosRef = firebaseRef.child("tecnicos").child(UsuarioFirebase.getIdUsuario());
+            tecnicosRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    for (DataSnapshot ds : snapshot.getChildren()) {
+                        Tecnicos tecnicos = snapshot.getValue(Tecnicos.class);
+                        tipoTecnicoLogado = tecnicos.getTipoTecnico();
+
+                        Log.d("tipotecnicoLogado", tipoTecnicoLogado);
+                        validacaoTela(tipoTecnicoLogado);
+
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+        } catch (Exception e) {
+            Log.e("erroCarregarValorDiario", "Não foi possivel carregar os valores de meta do tecnico");
+        }
+    }
+
+    private void validacaoTela(String tipo) {
+        String tecnicoPermitido = "A";
+        Log.d("tipotecnico2", UsuarioFirebase.getIdUsuario() + "//" + idTecnicoSelecionado);
+
+        if (UsuarioFirebase.getIdUsuario().equals(idTecnicoSelecionado) || tipoTecnicoLogado.equals(tecnicoPermitido)) {
+            fab.setVisibility(View.VISIBLE);
+            swipe();
+
+        } else {
+            fab.setVisibility(View.INVISIBLE);
         }
     }
 }

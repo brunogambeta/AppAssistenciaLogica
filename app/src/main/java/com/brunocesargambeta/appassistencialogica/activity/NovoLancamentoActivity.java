@@ -1,21 +1,20 @@
 package com.brunocesargambeta.appassistencialogica.activity;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CalendarView;
 import android.widget.EditText;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import com.brunocesargambeta.appassistencialogica.R;
 import com.brunocesargambeta.appassistencialogica.config.ConfiguracaoApp;
 import com.brunocesargambeta.appassistencialogica.config.ConfiguracaoFirebase;
-import com.brunocesargambeta.appassistencialogica.config.UsuarioFirebase;
 import com.brunocesargambeta.appassistencialogica.model.Lancamentos;
 import com.brunocesargambeta.appassistencialogica.model.Metas;
 import com.brunocesargambeta.appassistencialogica.model.Tecnicos;
@@ -25,7 +24,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.List;
 
 
 public class NovoLancamentoActivity extends AppCompatActivity {
@@ -33,9 +31,13 @@ public class NovoLancamentoActivity extends AppCompatActivity {
     private DatabaseReference firebaseRef;
     private EditText descricaoOS, numeroOS, valorOS;
     private Button buttonSalvarOS;
-    private String dataAtualSistema;
+    private String dataAtualSistema, idTecnico, tipoTecnico, dataLancamento;
     private Double valorSaldoTecnico, valorTotalMeta;
+    private ArrayList<Lancamentos> listaOrdemServico = new ArrayList<>();
     private Double valorSaldoMetas;
+    private String id = "";
+    private String tipoPermitido = "A";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,20 +48,28 @@ public class NovoLancamentoActivity extends AppCompatActivity {
         inicializarComponentes();
         firebaseRef = ConfiguracaoFirebase.getFirebase();
 
+        idTecnico = (String) getIntent().getSerializableExtra("IDTecnico");
+        tipoTecnico = (String) getIntent().getSerializableExtra("tipoTecnicoLogado");
+        dataLancamento = (String) getIntent().getSerializableExtra("dataLancamento");
+
+
         //Buscar Saldo tecnico
         buscarSaldoDiarioTecnico();
         buscarSaldoDiarioMetas();
+        validaNumeroOs();
+
 
         //Toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle("Novo Lançamento");
         toolbar.setTitleTextColor(Color.WHITE);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        // getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         buttonSalvarOS.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 String descricao = descricaoOS.getText().toString();
                 String numero = numeroOS.getText().toString();
                 Double valor = Double.parseDouble(valorOS.getText().toString());
@@ -71,12 +81,16 @@ public class NovoLancamentoActivity extends AppCompatActivity {
                             lancamento.setDescricaoOS(descricao);
                             lancamento.setNumeroOS(numero);
                             lancamento.setValorOS(valor);
-                            lancamento.setDataLancamento(dataAtualSistema);
+                            lancamento.setDataLancamento(dataLancamento);
+                            lancamento.setIdUsuarioLancamento(idTecnico);
+
                             lancamento.salvar();
                             atualizarValorDiarioTecnico(valor);
                             atualizarValorDiarioMeta(valor);
                             ConfiguracaoApp.exibirMensagem(getApplicationContext(), "Lançamento salvo com sucesso!");
                             finish();
+
+
                         } else {
                             ConfiguracaoApp.exibirMensagem(getApplicationContext(), "Valor da OS não informado, verifique!");
                         }
@@ -90,6 +104,7 @@ public class NovoLancamentoActivity extends AppCompatActivity {
         });
     }
 
+
     private void inicializarComponentes() {
         descricaoOS = findViewById(R.id.editTextDescricaoOS);
         numeroOS = findViewById(R.id.editTextNumeroOS);
@@ -99,7 +114,7 @@ public class NovoLancamentoActivity extends AppCompatActivity {
     }
 
     private void atualizarValorDiarioTecnico(Double valor) {
-        DatabaseReference tecnicoRef = firebaseRef.child("tecnicos").child(UsuarioFirebase.getIdUsuario());
+        DatabaseReference tecnicoRef = firebaseRef.child("tecnicos").child(idTecnico);
         Double valorAtualizado = valorSaldoTecnico + valor;
         Double valorNovo = valorTotalMeta + valor;
         tecnicoRef.child("valorLancadoDiario").setValue(valorAtualizado);
@@ -109,19 +124,21 @@ public class NovoLancamentoActivity extends AppCompatActivity {
     }
 
     private void buscarSaldoDiarioTecnico() {
-        DatabaseReference tecRef = firebaseRef.child("tecnicos").child(UsuarioFirebase.getIdUsuario());
+        try {
+
+        DatabaseReference tecRef = firebaseRef.child("tecnicos").child(idTecnico);
         tecRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 Tecnicos tec = snapshot.getValue(Tecnicos.class);
                 assert tec != null;
-                if (tec.getDataUltimoLancamento().equals(ConfiguracaoApp.getDateTime())){
+                if (tec.getDataUltimoLancamento().equals(ConfiguracaoApp.getDateTime())) {
                     valorSaldoTecnico = tec.getValorLancadoDiario();
-                }else{
+                } else {
                     valorSaldoTecnico = 0.00;
                 }
 
-                    valorTotalMeta = tec.getValorLancadoTotal();
+                valorTotalMeta = tec.getValorLancadoTotal();
             }
 
             @Override
@@ -129,17 +146,70 @@ public class NovoLancamentoActivity extends AppCompatActivity {
 
             }
         });
+
+        }catch (Exception e){
+            Log.e("BuscaSaldoTecnicoNL", "Novo foi possivel carregar os dados do saldo do Tecnico");
+        }
     }
 
     private void buscarSaldoDiarioMetas() {
-        DatabaseReference metasRef = firebaseRef.child("metas");
-        metasRef.addValueEventListener(new ValueEventListener() {
+        try {
+
+            DatabaseReference metasRef = firebaseRef.child("metas").child(ConfiguracaoApp.getMesAno());
+            metasRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    try {
+                        Metas metas = snapshot.getValue(Metas.class);
+                        valorSaldoMetas = metas.getValorDiario();
+                    } catch (Exception e) {
+                        ConfiguracaoApp.exibirMensagem(getApplicationContext(), "Não foi possível carregar os valores de meta!");
+                        finish();
+                    }
+
+
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+        }catch (Exception e){
+            Log.e("BuscaSaldoDiarioNL", "Não foi possivel carregar os valores de Metas");
+        }
+    }
+
+    private void atualizarValorDiarioMeta(Double valor) {
+        try {
+
+
+            DatabaseReference metasRef = firebaseRef.child("metas").child(ConfiguracaoApp.getMesAno());
+            Double valorAtualizado = valorSaldoMetas + valor;
+            if (valorSaldoMetas.isNaN() || valorSaldoMetas != null) {
+                metasRef.child("valorDiario").setValue(valorAtualizado);
+            } else {
+                Toast.makeText(getApplicationContext(), "Meta não informada, Verifique!", Toast.LENGTH_SHORT).show();
+            }
+        }catch (Exception e){
+            Log.e("atualizarValoresDiarios", "Não foi possivel salvar os valores diarios das metas");
+        }
+
+
+    }
+
+    private void validaNumeroOs() {
+        DatabaseReference osRef = firebaseRef.child("ordemServico");
+        osRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                for (DataSnapshot ds : snapshot.getChildren()) {
-                    Metas metas = ds.getValue(Metas.class);
-                    assert metas != null;
-                    valorSaldoMetas = metas.getValorDiario();
+                try {
+                    listaOrdemServico.clear();
+                    for (DataSnapshot ds : snapshot.getChildren()) {
+                        listaOrdemServico.add(snapshot.getValue(Lancamentos.class));
+                    }
+                } catch (Exception e) {
+                    Log.i("ErroTryCatch", e.toString());
                 }
             }
 
@@ -148,13 +218,6 @@ public class NovoLancamentoActivity extends AppCompatActivity {
 
             }
         });
-    }
-
-    private void atualizarValorDiarioMeta(Double valor) {
-        DatabaseReference metasRef = firebaseRef.child("metas").child(ConfiguracaoApp.getMesAno());
-        Double valorAtualizado = valorSaldoMetas + valor;
-        metasRef.child("valorDiario").setValue(valorAtualizado);
-
     }
 
 }

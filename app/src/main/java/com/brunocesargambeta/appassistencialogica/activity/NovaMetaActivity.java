@@ -20,15 +20,18 @@ import com.brunocesargambeta.appassistencialogica.model.Tecnicos;
 import com.google.firebase.database.DatabaseReference;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class NovaMetaActivity extends AppCompatActivity {
 
     private EditText campoValorMeta, campoQuantidadeTecnicos, campoDiasUteis;
     private Button buttonSalvar;
     private CalendarView calendarView;
-    private DecimalFormat decimalFormat = new DecimalFormat("0.00");
+    private DecimalFormatSymbols dfs = new DecimalFormatSymbols (new Locale("pt", "BR"));
+    DecimalFormat decimalFormat = new DecimalFormat ("#,##0.00", dfs);
     private Double valorMetaDiaria, valorAjustado, valorMetaTotal;
     private DatabaseReference firebaseRef;
 

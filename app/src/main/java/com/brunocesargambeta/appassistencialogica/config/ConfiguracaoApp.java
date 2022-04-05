@@ -1,27 +1,17 @@
 package com.brunocesargambeta.appassistencialogica.config;
 
-import android.app.AppComponentFactory;
 import android.app.Application;
 import android.content.Context;
-import android.graphics.ColorSpace;
 import android.widget.Toast;
-import android.widget.Toolbar;
-
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
-import com.brunocesargambeta.appassistencialogica.model.Metas;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.ValueEventListener;
 
 import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 public class ConfiguracaoApp extends Application {
-
 
 
     public static void exibirMensagem(Context context, String texto) {
@@ -34,16 +24,10 @@ public class ConfiguracaoApp extends Application {
         return dateFormat.format(date);
     }
 
-    public static String getMesAno(){
+    public static String getMesAno() {
         DateFormat mesAnoFormat = new SimpleDateFormat("MM-yyyy");
         Date mesAno = new Date();
         return mesAnoFormat.format(mesAno);
-    }
-
-    public static String getNomeUsuario(){
-
-        return "Bruno";
-
     }
 
 

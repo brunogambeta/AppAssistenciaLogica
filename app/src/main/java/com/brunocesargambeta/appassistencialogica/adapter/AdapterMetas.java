@@ -13,12 +13,15 @@ import com.brunocesargambeta.appassistencialogica.model.Lancamentos;
 import com.brunocesargambeta.appassistencialogica.model.Metas;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.List;
+import java.util.Locale;
 
 public class AdapterMetas extends RecyclerView.Adapter<AdapterMetas.MyViewHolder> {
 
     private List<Metas> listaMetas;
-    private DecimalFormat decimalFormat = new DecimalFormat("0.00");
+    DecimalFormatSymbols dfs = new DecimalFormatSymbols (new Locale("pt", "BR"));
+    DecimalFormat decimalFormat = new DecimalFormat ("#,##0.00", dfs);
 
     public AdapterMetas(List<Metas> listaMetas) {
         this.listaMetas = listaMetas;
