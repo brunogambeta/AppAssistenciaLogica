@@ -353,10 +353,10 @@ public class LancamentosActivity extends AppCompatActivity {
     }
 
     private void validacaoTela(String tipo) {
-        String tecnicoPermitido = "A";
-        Log.d("tipotecnico2", UsuarioFirebase.getIdUsuario() + "//" + idTecnicoSelecionado);
 
-        if (UsuarioFirebase.getIdUsuario().equals(idTecnicoSelecionado) || tipoTecnicoLogado.equals(tecnicoPermitido)) {
+        //Feito alteração para que apenas os usuários com tipo A, possam fazer lançamentos.
+        if (tipoTecnicoLogado.equals("A")){
+        //if (UsuarioFirebase.getIdUsuario().equals(idTecnicoSelecionado) || tipoTecnicoLogado.equals(tecnicoPermitido)) {
             fab.setVisibility(View.VISIBLE);
             swipe();
 

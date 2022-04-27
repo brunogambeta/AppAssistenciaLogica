@@ -28,27 +28,36 @@ public class UsuarioFirebase {
     }
 
     public static String getTipoUsuarioLogado() {
-        final String[] tipoTecnico = {"A"};
-        DatabaseReference firebaseRef = ConfiguracaoFirebase.getFirebase();
-        DatabaseReference usuarioRef = firebaseRef.child("tecnicos").child(UsuarioFirebase.getIdUsuario());
-        usuarioRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Tecnicos tec = snapshot.getValue(Tecnicos.class);
-                assert tec != null;
-                tipoTecnico[0] = tec.getTipoTecnico();
-            }
+        String[] tipoTecnico = {""};
+        try {
+            DatabaseReference firebaseRef = ConfiguracaoFirebase.getFirebase();
+            DatabaseReference usuarioRef = firebaseRef.child("tecnicos").child(UsuarioFirebase.getIdUsuario());
+            usuarioRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    for (DataSnapshot ds : snapshot.getChildren()) {
+                        Tecnicos tec = snapshot.getValue(Tecnicos.class);
+                        assert tec != null;
+                        //tipoTecnico[0] = tec.getTipoTecnico();
+                       // Log.d("tipoTecnico", tipoTecnico[0]);
+                    }
 
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
+                }
 
 
-        return tipoTecnico[0];
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
 
 
+            return "T";
+
+        }catch (Exception e){
+            Log.i("Exception", e.toString());
+            return "T";
+        }
     }
 }

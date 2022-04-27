@@ -33,10 +33,10 @@ public class NovoLancamentoActivity extends AppCompatActivity {
     private Button buttonSalvarOS;
     private String dataAtualSistema, idTecnico, tipoTecnico, dataLancamento;
     private Double valorSaldoTecnico, valorTotalMeta;
-    private ArrayList<Lancamentos> listaOrdemServico = new ArrayList<>();
+    private final ArrayList<Lancamentos> listaOrdemServico = new ArrayList<>();
     private Double valorSaldoMetas;
-    private String id = "";
-    private String tipoPermitido = "A";
+    private final String id = "";
+    private final String tipoPermitido = "A";
 
 
     @Override
@@ -126,28 +126,28 @@ public class NovoLancamentoActivity extends AppCompatActivity {
     private void buscarSaldoDiarioTecnico() {
         try {
 
-        DatabaseReference tecRef = firebaseRef.child("tecnicos").child(idTecnico);
-        tecRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Tecnicos tec = snapshot.getValue(Tecnicos.class);
-                assert tec != null;
-                if (tec.getDataUltimoLancamento().equals(ConfiguracaoApp.getDateTime())) {
-                    valorSaldoTecnico = tec.getValorLancadoDiario();
-                } else {
-                    valorSaldoTecnico = 0.00;
+            DatabaseReference tecRef = firebaseRef.child("tecnicos").child(idTecnico);
+            tecRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    Tecnicos tec = snapshot.getValue(Tecnicos.class);
+                    assert tec != null;
+                    if (tec.getDataUltimoLancamento().equals(ConfiguracaoApp.getDateTime())) {
+                        valorSaldoTecnico = tec.getValorLancadoDiario();
+                    } else {
+                        valorSaldoTecnico = 0.00;
+                    }
+
+                    valorTotalMeta = tec.getValorLancadoTotal();
                 }
 
-                valorTotalMeta = tec.getValorLancadoTotal();
-            }
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
+                }
+            });
 
-            }
-        });
-
-        }catch (Exception e){
+        } catch (Exception e) {
             Log.e("BuscaSaldoTecnicoNL", "Novo foi possivel carregar os dados do saldo do Tecnico");
         }
     }
@@ -175,7 +175,7 @@ public class NovoLancamentoActivity extends AppCompatActivity {
 
                 }
             });
-        }catch (Exception e){
+        } catch (Exception e) {
             Log.e("BuscaSaldoDiarioNL", "Não foi possivel carregar os valores de Metas");
         }
     }
@@ -191,7 +191,7 @@ public class NovoLancamentoActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(getApplicationContext(), "Meta não informada, Verifique!", Toast.LENGTH_SHORT).show();
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             Log.e("atualizarValoresDiarios", "Não foi possivel salvar os valores diarios das metas");
         }
 
